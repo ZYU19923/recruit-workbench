@@ -1,11 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  images: {
-    remotePatterns: [
-      { protocol: 'https', hostname: '**' }
-    ],
-    unoptimized: true,
-  },
+  images: { unoptimized: true },
   webpack: (config) => {
     config.watchOptions = {
       poll: 1000,
@@ -14,5 +9,7 @@ const nextConfig = {
     return config
   },
 }
+
+module.exports = nextConfig
 
 module.exports = nextConfig
