@@ -59,7 +59,7 @@ export default function CommunicationsPage() {
           {filtered.map((r) => (
             <Link
               key={r.id}
-              href={`/candidates/${r.candidate_id}`}
+              href={`/candidates/detail?id=${r.candidate_id}`}
               className="flex items-center justify-between px-5 py-3.5 hover:bg-[rgb(var(--accent))] transition-colors"
             >
               <div className="flex items-start gap-3 min-w-0">

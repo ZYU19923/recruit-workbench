@@ -70,7 +70,7 @@ export default function CandidatesPage() {
               return (
                 <Link
                   key={c.id}
-                  href={`/candidates/${c.id}`}
+                  href={`/candidates/detail?id=${c.id}`}
                   className="flex items-center justify-between px-5 py-3.5 hover:bg-[rgb(var(--accent))] transition-colors"
                 >
                   <div className="flex items-center gap-3">

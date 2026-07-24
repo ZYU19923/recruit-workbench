@@ -61,7 +61,7 @@ export default function InterviewsPage() {
           <div className="divide-y divide-[rgb(var(--border))]">
             {enriched.map((iv) => (
               <div key={iv.id} className="flex items-center justify-between px-5 py-3.5 hover:bg-[rgb(var(--accent))] transition-colors">
-                <Link href={`/candidates/${iv.candidate_id}`} className="flex items-center gap-3 flex-1 min-w-0">
+                <Link href={`/candidates/detail?id=${iv.candidate_id}`} className="flex items-center gap-3 flex-1 min-w-0">
                   <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary-100 text-primary-700 text-sm font-medium shrink-0">
                     {iv.candidateInitial}
                   </div>

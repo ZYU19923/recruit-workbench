@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, Suspense } from 'react'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import { ArrowLeft, Phone, Mail, MapPin, Calendar, MessageSquare, Plus } from 'lucide-react'
 import { Button } from '@/components/shared/Button'
 import { cn } from '@/lib/utils'
@@ -10,9 +11,11 @@ import { useCandidate, useCommunications, useJobs } from '@/lib/use-store'
 import { STAGE_LABELS, STAGE_COLORS, COMMUNICATION_METHOD_LABELS } from '@/types'
 import type { CandidateStage, CommunicationMethod } from '@/types'
 
-export default function CandidateDetailPage({ params }: { params: { id: string } }) {
-  const candidate = useCandidate(params.id)
-  const comms = useCommunications(params.id)
+function CandidateDetailContent() {
+  const searchParams = useSearchParams()
+  const id = searchParams.get('id') || ''
+  const candidate = useCandidate(id)
+  const comms = useCommunications(id)
   const jobs = useJobs()
   const [showCommForm, setShowCommForm] = useState(false)
   const [commForm, setCommForm] = useState({
@@ -30,13 +33,13 @@ export default function CandidateDetailPage({ params }: { params: { id: string }
   }
 
   const handleStageChange = (newStage: CandidateStage) => {
-    db.updateCandidate(params.id, { stage: newStage })
+    db.updateCandidate(id, { stage: newStage })
   }
 
   const handleAddCommunication = () => {
     if (!commForm.content) return
     db.createCommunication({
-      candidate_id: params.id,
+      candidate_id: id,
       contact_time: new Date().toISOString(),
       method: commForm.method,
       content: commForm.content,
@@ -64,7 +67,7 @@ export default function CandidateDetailPage({ params }: { params: { id: string }
               <h2 className="text-xl font-bold">{candidate.name}</h2>
               {candidate.job && (
                 <div className="flex items-center gap-2 text-sm text-[rgb(var(--muted-foreground))]">
-                  <Link href={`/jobs/${candidate.job.id}`} className="hover:text-primary-600">{candidate.job.title}</Link>
+                  <Link href={`/jobs/detail?id=${candidate.job.id}`} className="hover:text-primary-600">{candidate.job.title}</Link>
                   <span>·</span>
                   <span>{candidate.job.department}</span>
                 </div>
@@ -73,7 +76,7 @@ export default function CandidateDetailPage({ params }: { params: { id: string }
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Link href={`/candidates/${candidate.id}/edit`}>
+          <Link href={`/candidates/new?job_id=${id}`}>
             <Button variant="outline" size="sm">编辑</Button>
           </Link>
         </div>
@@ -235,5 +238,13 @@ export default function CandidateDetailPage({ params }: { params: { id: string }
         </div>
       </div>
     </div>
+  )
+}
+
+export default function CandidateDetailPage() {
+  return (
+    <Suspense fallback={<div className="py-16 text-center text-[rgb(var(--muted-foreground))]">加载中...</div>}>
+      <CandidateDetailContent />
+    </Suspense>
   )
 }

@@ -69,7 +69,7 @@ export default function DashboardPage() {
               {jobsOverview.map((job) => (
                 <Link
                   key={job.id}
-                  href={`/jobs/${job.id}`}
+                  href={`/jobs/detail?id=${job.id}`}
                   className="rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--card))] p-4 hover:border-[rgb(var(--ring))] cursor-pointer transition-colors"
                 >
                   <div className="flex items-start justify-between">
@@ -123,7 +123,7 @@ export default function DashboardPage() {
                 {recentCandidates.map((c) => (
                   <Link
                     key={c.id}
-                    href={`/candidates/${c.id}`}
+                    href={`/candidates/detail?id=${c.id}`}
                     className="flex items-center justify-between px-4 py-3 hover:bg-[rgb(var(--accent))] cursor-pointer transition-colors"
                   >
                     <div className="flex items-center gap-3">

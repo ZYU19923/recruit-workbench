@@ -55,7 +55,7 @@ function KanbanCard({ candidate }: { candidate: Candidate }) {
       style={style}
       {...attributes}
       {...listeners}
-      href={`/candidates/${candidate.id}`}
+      href={`/candidates/detail?id=${candidate.id}`}
       className="block rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--background))] p-2.5 shadow-sm hover:shadow-md transition-shadow touch-none"
     >
       <div className="flex items-center gap-2">
@@ -190,7 +190,7 @@ export default function JobsPage() {
             return (
               <Link
                 key={job.id}
-                href={`/jobs/${job.id}`}
+                href={`/jobs/detail?id=${job.id}`}
                 className="group rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--card))] p-5 hover:border-[rgb(var(--ring))] hover:shadow-sm transition-all"
               >
                 <div className="flex items-start justify-between">
@@ -230,7 +230,7 @@ export default function JobsPage() {
                 <div className="mt-4 flex items-center justify-between text-xs text-[rgb(var(--muted-foreground))]">
                   <span>创建: {job.created_at}</span>
                   <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button className="rounded p-1 hover:bg-[rgb(var(--accent))]" onClick={(e) => { e.preventDefault(); e.stopPropagation(); router.push(`/jobs/${job.id}`) }}>
+                    <button className="rounded p-1 hover:bg-[rgb(var(--accent))]" onClick={(e) => { e.preventDefault(); e.stopPropagation(); router.push(`/jobs/detail?id=${job.id}`) }}>
                       <Edit size={14} />
                     </button>
                     <button className="rounded p-1 hover:bg-red-50 hover:text-red-600" onClick={(e) => handleDelete(e, job.id)}>

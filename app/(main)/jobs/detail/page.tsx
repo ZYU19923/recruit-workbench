@@ -1,6 +1,8 @@
 'use client'
 
+import { Suspense } from 'react'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import { ArrowLeft, MapPin, Users, Calendar, Edit, Plus } from 'lucide-react'
 import { Button } from '@/components/shared/Button'
 import { useJob, useCandidatesByJob } from '@/lib/use-store'
@@ -20,9 +22,11 @@ const STAGE_DIST = [
   { stage: 'withdrawn', label: '放弃' },
 ]
 
-export default function JobDetailPage({ params }: { params: { id: string } }) {
-  const job = useJob(params.id)
-  const candidates = useCandidatesByJob(params.id)
+function JobDetailContent() {
+  const searchParams = useSearchParams()
+  const id = searchParams.get('id') || ''
+  const job = useJob(id)
+  const candidates = useCandidatesByJob(id)
 
   if (!job) {
     return (
@@ -59,10 +63,10 @@ export default function JobDetailPage({ params }: { params: { id: string } }) {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Link href={`/jobs/${job.id}/edit`}>
+          <Link href={`/jobs/new?edit_id=${id}`}>
             <Button variant="outline" size="sm"><Edit size={14} />编辑</Button>
           </Link>
-          <Link href={`/candidates/new?job_id=${job.id}`}>
+          <Link href={`/candidates/new?job_id=${id}`}>
             <Button size="sm"><Plus size={14} />添加候选人</Button>
           </Link>
         </div>
@@ -146,7 +150,7 @@ export default function JobDetailPage({ params }: { params: { id: string } }) {
             {candidates.map((c) => (
               <Link
                 key={c.id}
-                href={`/candidates/${c.id}`}
+                href={`/candidates/detail?id=${c.id}`}
                 className="flex items-center justify-between py-3 hover:bg-[rgb(var(--accent))] px-2 -mx-2 rounded transition-colors"
               >
                 <div className="flex items-center gap-3">
@@ -178,5 +182,13 @@ export default function JobDetailPage({ params }: { params: { id: string } }) {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function JobDetailPage() {
+  return (
+    <Suspense fallback={<div className="py-16 text-center text-[rgb(var(--muted-foreground))]">加载中...</div>}>
+      <JobDetailContent />
+    </Suspense>
   )
 }

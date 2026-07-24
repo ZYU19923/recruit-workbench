@@ -38,10 +38,10 @@ export function TopBar() {
 
   const results = query.trim().length >= 1 ? [
     ...jobs.filter(j => j.title.includes(query) || j.department.includes(query)).slice(0, 3).map(j => ({
-      type: 'job' as const, id: j.id, label: j.title, sub: j.department, href: `/jobs/${j.id}`,
+      type: 'job' as const, id: j.id, label: j.title, sub: j.department, href: `/jobs/detail?id=${j.id}`,
     })),
     ...candidates.filter(c => c.name.includes(query) || c.phone.includes(query)).slice(0, 5).map(c => ({
-      type: 'candidate' as const, id: c.id, label: c.name, sub: STAGE_LABELS[c.stage as CandidateStage], href: `/candidates/${c.id}`,
+      type: 'candidate' as const, id: c.id, label: c.name, sub: STAGE_LABELS[c.stage as CandidateStage], href: `/candidates/detail?id=${c.id}`,
     })),
   ] : []
 
