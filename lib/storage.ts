@@ -81,7 +81,55 @@ function _write(data: Record<string, any[]>) {
   if (typeof window === 'undefined') return
   try {
     localStorage.setItem(KEY, JSON.stringify(data))
-  } catch {}
+  } catch (e) {
+    // QuotaExceededError or other storage failure — notify user
+    if (typeof window !== 'undefined' && (window as any).__storageError !== true) {
+      ;(window as any).__storageError = true
+      alert('存储空间不足！请前往 设置 → 数据管理 → 导出备份，然后清理部分数据。\n\n如果已上传简历文件，建议先导出备份再删除旧简历。')
+    }
+  }
+}
+
+function _saveFileToIndexedDB(id: string, file: { data: string; name: string; type: string }): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open('recruit-workbench-files', 1)
+    req.onupgradeneeded = () => { req.result.createObjectStore('files') }
+    req.onsuccess = () => {
+      const tx = req.result.transaction('files', 'readwrite')
+      tx.objectStore('files').put({ data: file.data, name: file.name, type: file.type }, id)
+      tx.oncomplete = () => resolve()
+      tx.onerror = () => reject(tx.error)
+    }
+    req.onerror = () => reject(req.error)
+  })
+}
+
+function _getFileFromIndexedDB(id: string): Promise<{ data: string; name: string; type: string } | null> {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open('recruit-workbench-files', 1)
+    req.onupgradeneeded = () => { req.result.createObjectStore('files') }
+    req.onsuccess = () => {
+      const tx = req.result.transaction('files', 'readonly')
+      const getReq = tx.objectStore('files').get(id)
+      getReq.onsuccess = () => resolve(getReq.result || null)
+      getReq.onerror = () => reject(getReq.error)
+    }
+    req.onerror = () => reject(req.error)
+  })
+}
+
+function _deleteFileFromIndexedDB(id: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open('recruit-workbench-files', 1)
+    req.onupgradeneeded = () => { req.result.createObjectStore('files') }
+    req.onsuccess = () => {
+      const tx = req.result.transaction('files', 'readwrite')
+      tx.objectStore('files').delete(id)
+      tx.oncomplete = () => resolve()
+      tx.onerror = () => reject(tx.error)
+    }
+    req.onerror = () => reject(req.error)
+  })
 }
 
 // Lazy-init: keep in-memory cache, flush to localStorage on every write
@@ -230,6 +278,45 @@ export const db = {
     return clone(arr[idx])
   },
   deleteTodo: (id: string) => { store().todos = store().todos.filter((t: Todo) => t.id !== id); save() },
+
+  // --- File management (IndexedDB, not localStorage) ---
+  saveFile: (id: string, file: { data: string; name: string; type: string }) => _saveFileToIndexedDB(id, file),
+  getFile: (id: string) => _getFileFromIndexedDB(id),
+  deleteFile: (id: string) => _deleteFileFromIndexedDB(id),
+
+  // --- Backup / Restore ---
+  exportAll: () => {
+    const s = store()
+    return JSON.stringify({
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      data: {
+        jobs: s.jobs,
+        candidates: s.candidates,
+        communications: s.communications,
+        interviews: s.interviews,
+        offers: s.offers,
+        workLogs: s.workLogs,
+        todos: s.todos,
+      },
+    }, null, 2)
+  },
+
+  importAll: (json: string) => {
+    let parsed: any
+    try { parsed = JSON.parse(json) } catch { return { success: false as const, error: 'JSON 格式无效' } }
+    if (!parsed.data) return { success: false as const, error: '缺少 data 字段' }
+    const d = parsed.data
+    for (const key of ['jobs', 'candidates', 'communications', 'interviews', 'offers', 'workLogs', 'todos']) {
+      if (d[key] && Array.isArray(d[key])) {
+        ;(store() as any)[key] = d[key]
+      } else if (!d[key]) {
+        ;(store() as any)[key] = []
+      }
+    }
+    save()
+    return { success: true as const }
+  },
 
   // --- Dashboard stats ---
   getDashboardStats: () => {

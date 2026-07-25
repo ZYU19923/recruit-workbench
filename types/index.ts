@@ -69,6 +69,8 @@ export interface Candidate {
   is_onboarded: boolean
   is_eliminated: boolean
   elimination_reason: string
+  resume_file: string | null
+  resume_file_name: string | null
   created_at: string
   updated_at: string
   user_id: string

@@ -1,15 +1,69 @@
 'use client'
 
-import { useState, Suspense } from 'react'
+import { useState, Suspense, useRef } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
-import { ArrowLeft, Phone, Mail, MapPin, Calendar, MessageSquare, Plus } from 'lucide-react'
+import { ArrowLeft, Phone, Mail, MapPin, Calendar, MessageSquare, Plus, Upload, FileText, X } from 'lucide-react'
 import { Button } from '@/components/shared/Button'
 import { cn } from '@/lib/utils'
 import { db } from '@/lib/storage'
 import { useCandidate, useCommunications, useJobs } from '@/lib/use-store'
 import { STAGE_LABELS, STAGE_COLORS, COMMUNICATION_METHOD_LABELS } from '@/types'
 import type { CandidateStage, CommunicationMethod } from '@/types'
+
+function ResumeUpload({ candidateId, resumeFile, resumeFileName }: { candidateId: string; resumeFile: string | null; resumeFileName: string | null }) {
+  const fileRef = useRef<HTMLInputElement>(null)
+  const [dragOver, setDragOver] = useState(false)
+  const [uploading, setUploading] = useState(false)
+
+  const handleFile = (file: File) => {
+    if (!file) return
+    setUploading(true)
+    const reader = new FileReader()
+    reader.onload = () => {
+      const base64 = reader.result as string
+      db.updateCandidate(candidateId, { resume_file: base64, resume_file_name: file.name })
+      setUploading(false)
+    }
+    reader.onerror = () => setUploading(false)
+    reader.readAsDataURL(file)
+  }
+
+  const clearFile = () => {
+    db.updateCandidate(candidateId, { resume_file: null, resume_file_name: null })
+  }
+
+  return (
+    <div className="rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--card))] p-4">
+      <h3 className="mb-3 text-sm font-semibold flex items-center gap-2">
+        <Upload size={14} />简历文件
+      </h3>
+      {resumeFile ? (
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 rounded-md bg-emerald-50 dark:bg-emerald-950 px-3 py-2 text-sm">
+            <FileText size={14} className="text-emerald-600 shrink-0" />
+            <span className="truncate flex-1">{resumeFileName || '简历'}</span>
+            <a href={resumeFile} download={resumeFileName || '简历'} className="text-xs text-primary-600 hover:underline shrink-0">下载</a>
+            <button onClick={clearFile} className="shrink-0 rounded p-0.5 hover:bg-red-100 hover:text-red-600"><X size={14} /></button>
+          </div>
+        </div>
+      ) : (
+        <div
+          className={`rounded-md border-2 border-dashed p-6 text-center transition-colors cursor-pointer ${dragOver ? 'border-primary-400 bg-primary-50' : 'border-[rgb(var(--border))] hover:border-primary-300'}`}
+          onClick={() => fileRef.current?.click()}
+          onDragOver={(e) => { e.preventDefault(); setDragOver(true) }}
+          onDragLeave={() => setDragOver(false)}
+          onDrop={(e) => { e.preventDefault(); setDragOver(false); const f = e.dataTransfer.files[0]; if (f) handleFile(f) }}
+        >
+          <Upload size={24} className="mx-auto mb-2 text-[rgb(var(--muted-foreground))]" />
+          <p className="text-sm text-[rgb(var(--muted-foreground))]">{uploading ? '上传中...' : '点击或拖拽上传简历（PDF/图片）'}</p>
+          <p className="text-xs text-[rgb(var(--muted-foreground))] mt-1">文件存储在浏览器本地</p>
+        </div>
+      )}
+      <input ref={fileRef} type="file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f) }} />
+    </div>
+  )
+}
 
 function CandidateDetailContent() {
   const searchParams = useSearchParams()
@@ -101,6 +155,8 @@ function CandidateDetailContent() {
               ))}
             </select>
           </div>
+
+          <ResumeUpload candidateId={id} resumeFile={(candidate as any).resume_file ?? null} resumeFileName={(candidate as any).resume_file_name ?? null} />
 
           <div className="rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--card))] p-4">
             <h3 className="mb-3 text-sm font-semibold">联系方式</h3>

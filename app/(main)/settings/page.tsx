@@ -6,7 +6,8 @@ import { useTheme } from '@/components/layout/ThemeProvider'
 import { db } from '@/lib/storage'
 import { useAuth } from '@/components/layout/AuthProvider'
 import { cn } from '@/lib/utils'
-import { Sun, Moon, User, Download, Database, Globe } from 'lucide-react'
+import { Sun, Moon, User, Download, Database, Upload } from 'lucide-react'
+import { useRef } from 'react'
 
 function downloadCSV(filename: string, headers: string[], rows: string[][]) {
   const BOM = '﻿'
@@ -23,7 +24,9 @@ function downloadCSV(filename: string, headers: string[], rows: string[][]) {
 export default function SettingsPage() {
   const { theme, toggleTheme } = useTheme()
   const { user } = useAuth()
-  const [activeTab, setActiveTab] = useState<'account' | 'appearance' | 'data' | 'notifications'>('account')
+  const [activeTab, setActiveTab] = useState<'account' | 'appearance' | 'data'>('account')
+  const [importMsg, setImportMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+  const fileRef = useRef<HTMLInputElement>(null)
 
   const exportCandidates = () => {
     const candidates = db.getCandidates()
@@ -56,6 +59,33 @@ export default function SettingsPage() {
     )
   }
 
+  const handleExportAll = () => {
+    const json = db.exportAll()
+    const blob = new Blob([json], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `招聘工作台_全量备份_${new Date().toISOString().slice(0, 10)}.json`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  const handleFileImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = () => {
+      const result = db.importAll(reader.result as string)
+      if (result.success) {
+        setImportMsg({ type: 'success', text: '数据导入成功！页面将刷新以加载新数据。' })
+        setTimeout(() => window.location.reload(), 1500)
+      } else {
+        setImportMsg({ type: 'error', text: result.error })
+      }
+    }
+    reader.readAsText(file)
+  }
+
   return (
     <div className="mx-auto max-w-2xl">
       <h2 className="text-lg font-semibold mb-6">设置</h2>
@@ -65,7 +95,6 @@ export default function SettingsPage() {
           { key: 'account', label: '账号', icon: <User size={14} /> },
           { key: 'appearance', label: '外观', icon: activeTab === 'appearance' && theme === 'dark' ? <Moon size={14} /> : <Sun size={14} /> },
           { key: 'data', label: '数据', icon: <Database size={14} /> },
-          { key: 'notifications', label: '通知', icon: <Globe size={14} /> },
         ].map((tab) => (
           <button
             key={tab.key}
@@ -133,70 +162,47 @@ export default function SettingsPage() {
       {activeTab === 'data' && (
         <div className="rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--card))] p-6">
           <h3 className="mb-4 text-sm font-semibold">数据管理</h3>
+          {importMsg && (
+            <div className={`mb-4 rounded-md p-3 text-sm ${importMsg.type === 'success' ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300'}`}>
+              {importMsg.text}
+            </div>
+          )}
+
           <div className="space-y-4">
-            <div className="flex items-center justify-between py-2">
-              <div>
-                <div className="text-sm font-medium">导出所有候选人</div>
-                <div className="text-xs text-[rgb(var(--muted-foreground))]">导出 CSV 格式</div>
+            <div className="rounded-md border border-emerald-200 bg-emerald-50 dark:bg-emerald-950 dark:border-emerald-800 p-4">
+              <div className="flex items-start gap-3">
+                <Upload size={20} className="text-emerald-600 mt-0.5 shrink-0" />
+                <div className="flex-1">
+                  <div className="text-sm font-medium">全量备份 · 导入/导出</div>
+                  <div className="text-xs text-[rgb(var(--muted-foreground))] mt-1">
+                    导出全部数据（岗位、候选人、沟通记录、面试、Offer、日志、待办）为 JSON 文件。可在另一台电脑导入恢复所有数据。
+                  </div>
+                  <div className="flex gap-2 mt-3">
+                    <Button size="sm" onClick={handleExportAll}><Download size={14} />导出备份</Button>
+                    <Button size="sm" variant="outline" onClick={() => fileRef.current?.click()}>
+                      <Upload size={14} />导入备份
+                    </Button>
+                    <input ref={fileRef} type="file" accept=".json" onChange={handleFileImport} className="hidden" />
+                  </div>
+                </div>
               </div>
+            </div>
+
+            <hr className="border-[rgb(var(--border))]" />
+
+            <h4 className="text-sm font-semibold">CSV 导出</h4>
+            <div className="flex items-center justify-between py-2">
+              <div><div className="text-sm font-medium">导出所有候选人</div><div className="text-xs text-[rgb(var(--muted-foreground))]">导出 CSV 格式</div></div>
               <Button variant="outline" size="sm" onClick={exportCandidates}><Download size={14} />导出</Button>
             </div>
             <div className="flex items-center justify-between py-2">
-              <div>
-                <div className="text-sm font-medium">导出岗位数据</div>
-                <div className="text-xs text-[rgb(var(--muted-foreground))]">导出 CSV 格式</div>
-              </div>
+              <div><div className="text-sm font-medium">导出岗位数据</div><div className="text-xs text-[rgb(var(--muted-foreground))]">导出 CSV 格式</div></div>
               <Button variant="outline" size="sm" onClick={exportJobs}><Download size={14} />导出</Button>
             </div>
             <div className="flex items-center justify-between py-2">
-              <div>
-                <div className="text-sm font-medium">导出工作记录</div>
-                <div className="text-xs text-[rgb(var(--muted-foreground))]">导出 CSV 格式</div>
-              </div>
+              <div><div className="text-sm font-medium">导出工作记录</div><div className="text-xs text-[rgb(var(--muted-foreground))]">导出 CSV 格式</div></div>
               <Button variant="outline" size="sm" onClick={exportWorkLogs}><Download size={14} />导出</Button>
             </div>
-            <hr className="border-[rgb(var(--border))]" />
-            <div className="flex items-center justify-between py-2">
-              <div>
-                <div className="text-sm font-medium">数据同步状态</div>
-                <div className="text-xs text-emerald-500">已同步</div>
-              </div>
-              <Button variant="outline" size="sm">立即同步</Button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {activeTab === 'notifications' && (
-        <div className="rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--card))] p-6">
-          <h3 className="mb-4 text-sm font-semibold">通知设置</h3>
-          <div className="space-y-4">
-            {[
-              { label: '候选人超期未跟进提醒', desc: '超过3天自动提醒', checked: true },
-              { label: '今日面试提醒', desc: '提前提醒今日面试安排', checked: true },
-              { label: 'Offer 待确认提醒', desc: 'Offer 发出后提醒跟进', checked: true },
-              { label: 'Leader 反馈提醒', desc: '需要 Leader 反馈时提醒', checked: false },
-            ].map((item) => (
-              <div key={item.label} className="flex items-center justify-between py-2">
-                <div>
-                  <div className="text-sm font-medium">{item.label}</div>
-                  <div className="text-xs text-[rgb(var(--muted-foreground))]">{item.desc}</div>
-                </div>
-                <button
-                  className={cn(
-                    'relative h-5 w-9 rounded-full transition-colors',
-                    item.checked ? 'bg-primary-600' : 'bg-gray-300 dark:bg-gray-600'
-                  )}
-                >
-                  <div
-                    className={cn(
-                      'absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform',
-                      item.checked ? 'translate-x-4.5' : 'translate-x-0.5'
-                    )}
-                  />
-                </button>
-              </div>
-            ))}
           </div>
         </div>
       )}

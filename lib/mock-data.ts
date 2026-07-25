@@ -76,6 +76,7 @@ let candidates: Candidate[] = [
     last_contacted_at: '2026-07-15', next_follow_up_at: '2026-07-18',
     is_recommended: false, is_interview_scheduled: true, is_offered: false, is_onboarded: false,
     is_eliminated: false, elimination_reason: '',
+    resume_file: null, resume_file_name: null,
     created_at: '2026-07-05', updated_at: '2026-07-15', user_id: 'mock-user',
   },
   {
@@ -88,6 +89,7 @@ let candidates: Candidate[] = [
     last_contacted_at: '2026-07-15', next_follow_up_at: '2026-07-17',
     is_recommended: false, is_interview_scheduled: true, is_offered: false, is_onboarded: false,
     is_eliminated: false, elimination_reason: '',
+    resume_file: null, resume_file_name: null,
     created_at: '2026-07-08', updated_at: '2026-07-15', user_id: 'mock-user',
   },
   {
@@ -100,6 +102,7 @@ let candidates: Candidate[] = [
     last_contacted_at: '2026-07-14', next_follow_up_at: '2026-07-20',
     is_recommended: true, is_interview_scheduled: false, is_offered: true, is_onboarded: false,
     is_eliminated: false, elimination_reason: '',
+    resume_file: null, resume_file_name: null,
     created_at: '2026-07-02', updated_at: '2026-07-14', user_id: 'mock-user',
   },
   {
@@ -112,6 +115,7 @@ let candidates: Candidate[] = [
     last_contacted_at: '2026-07-14', next_follow_up_at: '2026-07-16',
     is_recommended: false, is_interview_scheduled: false, is_offered: false, is_onboarded: false,
     is_eliminated: false, elimination_reason: '',
+    resume_file: null, resume_file_name: null,
     created_at: '2026-07-06', updated_at: '2026-07-14', user_id: 'mock-user',
   },
   {
@@ -124,6 +128,7 @@ let candidates: Candidate[] = [
     last_contacted_at: '2026-07-13', next_follow_up_at: '2026-07-17',
     is_recommended: false, is_interview_scheduled: false, is_offered: false, is_onboarded: false,
     is_eliminated: false, elimination_reason: '',
+    resume_file: null, resume_file_name: null,
     created_at: '2026-07-10', updated_at: '2026-07-13', user_id: 'mock-user',
   },
   {
@@ -136,6 +141,7 @@ let candidates: Candidate[] = [
     last_contacted_at: '2026-07-10', next_follow_up_at: null,
     is_recommended: false, is_interview_scheduled: false, is_offered: false, is_onboarded: false,
     is_eliminated: true, elimination_reason: '设计风格与团队不匹配',
+    resume_file: null, resume_file_name: null,
     created_at: '2026-06-20', updated_at: '2026-07-10', user_id: 'mock-user',
   },
   {
@@ -148,6 +154,7 @@ let candidates: Candidate[] = [
     last_contacted_at: '2026-07-08', next_follow_up_at: null,
     is_recommended: false, is_interview_scheduled: false, is_offered: false, is_onboarded: false,
     is_eliminated: false, elimination_reason: '',
+    resume_file: null, resume_file_name: null,
     created_at: '2026-05-15', updated_at: '2026-07-08', user_id: 'mock-user',
   },
 ]

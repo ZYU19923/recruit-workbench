@@ -1,9 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/shared/Button'
-import { ArrowLeft, Save } from 'lucide-react'
+import { ArrowLeft, Save, Upload, FileText, X } from 'lucide-react'
 import { db } from '@/lib/storage'
 import { useRouter } from 'next/navigation'
 import type { CandidateStage } from '@/types'
@@ -11,6 +11,8 @@ import type { CandidateStage } from '@/types'
 export default function NewCandidatePage() {
   const router = useRouter()
   const jobs = db.getJobs().filter(j => j.status === 'hiring')
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [resumeFile, setResumeFile] = useState<{ data: string; name: string; type: string } | null>(null)
   const [form, setForm] = useState({
     name: '', phone: '', email: '', age: '', job_id: '',
     education: '', school: '', major: '', work_years: '',
@@ -19,18 +21,42 @@ export default function NewCandidatePage() {
     resume_notes: '', communication_notes: '',
   })
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.size > 5 * 1024 * 1024) {
+      alert('文件大小不能超过 5MB')
+      return
+    }
+    const reader = new FileReader()
+    reader.onload = () => {
+      setResumeFile({ data: reader.result as string, name: file.name, type: file.type })
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const removeFile = () => {
+    setResumeFile(null)
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    const job = db.getJob(form.job_id)
-    db.createCandidate({
+    const saved = db.createCandidate({
       ...form,
       age: form.age ? parseInt(form.age) : null,
       work_years: form.work_years ? parseInt(form.work_years) : null,
       is_recommended: false, is_interview_scheduled: false,
       is_offered: false, is_onboarded: false, is_eliminated: false,
       elimination_reason: '', last_contacted_at: null, next_follow_up_at: null,
+      resume_file: null,
+      resume_file_name: resumeFile ? resumeFile.name : null,
     })
-    router.push('/candidates')
+    // Persist file to IndexedDB, then update candidate with file reference
+    if (resumeFile) {
+      await db.saveFile(saved.id, resumeFile)
+      db.updateCandidate(saved.id, { resume_file: saved.id })
+    }
   }
 
   const update = (key: string, value: string) => setForm((f) => ({ ...f, [key]: value }))
@@ -55,6 +81,42 @@ export default function NewCandidatePage() {
             <div><label className="mb-1 block text-sm font-medium">所属岗位 *</label><select value={form.job_id} onChange={(e) => update('job_id', e.target.value)} className="w-full rounded-md border border-[rgb(var(--input))] bg-[rgb(var(--background))] px-3 py-2 text-sm" required><option value="">请选择岗位</option>{jobs.map((j) => (<option key={j.id} value={j.id}>{j.title}</option>))}</select></div>
             <div><label className="mb-1 block text-sm font-medium">来源渠道</label><input type="text" value={form.source_channel} onChange={(e) => update('source_channel', e.target.value)} placeholder="Boss直聘 / 猎聘 / 内推等" className="w-full rounded-md border border-[rgb(var(--input))] bg-[rgb(var(--background))] px-3 py-2 text-sm" /></div>
           </div>
+        </div>
+
+        <div className="rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--card))] p-6">
+          <h3 className="mb-4 text-sm font-semibold">简历文件</h3>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".pdf,.doc,.docx,.txt"
+            onChange={handleFileChange}
+            className="hidden"
+          />
+          {resumeFile ? (
+            <div className="flex items-center justify-between rounded-md border border-[rgb(var(--border))] bg-[rgb(var(--background))] p-3">
+              <div className="flex items-center gap-2">
+                <FileText size={18} className="text-primary-500" />
+                <div>
+                  <div className="text-sm font-medium">{resumeFile.name}</div>
+                  <div className="text-xs text-[rgb(var(--muted-foreground))]">
+                    {(resumeFile.data.length / 1024).toFixed(0)} KB
+                  </div>
+                </div>
+              </div>
+              <button type="button" onClick={removeFile} className="rounded p-1 hover:bg-red-50 hover:text-red-600">
+                <X size={16} />
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="flex w-full items-center justify-center gap-2 rounded-md border-2 border-dashed border-[rgb(var(--border))] p-6 text-sm text-[rgb(var(--muted-foreground))] hover:border-primary-400 hover:text-primary-600 transition-colors"
+            >
+              <Upload size={18} />
+              上传简历 (PDF/DOC/DOCX, 最大 5MB)
+            </button>
+          )}
         </div>
 
         <div className="rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--card))] p-6">
